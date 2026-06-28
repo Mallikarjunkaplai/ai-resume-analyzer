@@ -1,0 +1,74 @@
+// This is your Prisma schema file.
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// ---------------------------------------------------------------------------
+// Generator — which client library Prisma generates
+// ---------------------------------------------------------------------------
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ---------------------------------------------------------------------------
+// Datasource — PostgreSQL (Neon)
+//
+// ⚠️  Prisma 7 Breaking Change:
+//     The `url` and `directUrl` properties are NO LONGER supported here.
+//     Connection URLs are now configured in `prisma.config.ts` (for the CLI)
+//     and passed directly to `new PrismaClient({ datasourceUrl: ... })`.
+//     See: lib/db.ts and prisma.config.ts
+// ---------------------------------------------------------------------------
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// User model — synced from Clerk via the webhook handler
+//
+// The `id` field stores Clerk's user ID directly (e.g. "user_2abc...").
+// This avoids a separate `clerkId` column and keeps the primary key
+// meaningful and lookupable with a single field.
+// ---------------------------------------------------------------------------
+model User {
+  /// Clerk's user ID — used directly as our primary key (e.g. "user_2NNEqL...").
+  /// This makes cross-referencing between Clerk and the DB trivial.
+  id        String   @id                  // e.g. "user_2NNEqL..."
+
+  /// Primary email address. Must be unique across all users.
+  email     String   @unique
+
+  /// Optional — Clerk allows users to sign up without a first/last name.
+  firstName String?
+  lastName  String?
+
+  /// 👈 THIS IS THE MISSING LINE: Links the user to their resumes
+  resumes   Resume[] 
+
+  /// Managed automatically by Prisma.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users") // maps to the "users" table in PostgreSQL
+}
+model Resume {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName    String
+  fileUrl     String?   // If you decide to store the PDF in an S3/Uploadthing bucket later
+  rawText     String    // The extracted text that we will feed directly to the LLM
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  analysis    Analysis? // 1-to-1 relation: a resume can have one deep AI analysis
+
+  @@index([userId])
+}
+
+model Analysis {
+  id             String   @id @default(cuid())
+  resumeId       String   @unique
+  resume         Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  score          Int      // Overall ATS score out of 100
+  feedbackJson   Json     // Strict structured object: { missingKeywords: [], formattingTips: [], summary: "" }
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
