@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/resumes
  * Returns all resumes (with their analyses) for the currently authenticated user.
