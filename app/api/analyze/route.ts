@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import { auth } from "@clerk/nextjs/server";
 
+export const dynamic = 'force-dynamic';
+
 // 1. Initialize the Groq client securely using your .env key
 const groq = new Groq({
     apiKey: process.env.GROQ_API_KEY,

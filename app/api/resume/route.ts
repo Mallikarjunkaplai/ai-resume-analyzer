@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
+
+export const dynamic = 'force-dynamic';
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import Groq from "groq-sdk";
