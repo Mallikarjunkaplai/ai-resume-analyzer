@@ -25,6 +25,8 @@ import { headers } from "next/headers";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 
+export const dynamic = 'force-dynamic';
+
 // ---------------------------------------------------------------------------
 // Route handler — POST only
 // ---------------------------------------------------------------------------
