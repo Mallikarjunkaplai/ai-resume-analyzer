@@ -1,14 +1,16 @@
 /**
  * proxy.ts — Root-level Proxy (Next.js 16+)
  *
- * ⚠️  In Next.js 16 the `middleware.ts` file convention was deprecated and
- *     renamed to `proxy.ts`. This file MUST live at the project root (same
- *     level as `app/` and `package.json`).
+ * In Next.js 16 the `middleware.ts` file convention was deprecated and
+ * renamed to `proxy.ts`. This file MUST live at the project root (same
+ * level as `app/` and `package.json`).
  *
  * What this proxy does:
  *   1. Uses Clerk's `clerkMiddleware` to attach auth context to every request.
- *   2. Uses `createRouteMatcher` to declare which routes require authentication.
- *   3. Calls `auth.protect()` only for matched protected routes, leaving all
+ *   2. Explicitly passes `publishableKey` and `secretKey` to guarantee Clerk
+ *      can authenticate even when env vars are read before Next.js injects them.
+ *   3. Uses `createRouteMatcher` to declare which routes require authentication.
+ *   4. Calls `auth.protect()` only for matched protected routes, leaving all
  *      other routes (including the homepage and the Svix webhook endpoint)
  *      completely public.
  */
@@ -22,10 +24,6 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 /**
  * Routes that must be authenticated.
  * Add additional protected paths here as the app grows.
- *
- * Examples:
- *   '/dashboard(.*)'  — matches /dashboard and every sub-route
- *   '/settings(.*)'  — matches /settings and every sub-route
  */
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
@@ -33,19 +31,27 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 // ---------------------------------------------------------------------------
-// Proxy function (replaces the old `middleware` export)
+// Proxy function
 // ---------------------------------------------------------------------------
 
-export default clerkMiddleware(async (auth, request) => {
-  // If the incoming request matches a protected route, enforce authentication.
-  // Clerk will automatically redirect unauthenticated users to the sign-in page.
-  if (isProtectedRoute(request)) {
-    await auth.protect();
-  }
+export default clerkMiddleware(
+  async (auth, request) => {
+    // If the incoming request matches a protected route, enforce authentication.
+    // Clerk will automatically redirect unauthenticated users to the sign-in page.
+    if (isProtectedRoute(request)) {
+      await auth.protect();
+    }
 
-  // All other routes (including "/" and "/api/webhooks/(.*)") fall through
-  // without any authentication check, keeping them fully public.
-});
+    // All other routes (including "/" and "/api/webhooks/(.*)") fall through
+    // without any authentication check, keeping them fully public.
+  },
+  {
+    // Explicitly passing the keys prevents Clerk from failing silently when
+    // the env vars aren't automatically picked up at proxy evaluation time.
+    publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    secretKey: process.env.CLERK_SECRET_KEY,
+  }
+);
 
 // ---------------------------------------------------------------------------
 // Matcher — controls which paths the proxy function runs on at all.
@@ -57,8 +63,6 @@ export default clerkMiddleware(async (auth, request) => {
 //
 // We deliberately INCLUDE:
 //   • /api/webhooks/(.*) — must reach the server so Svix can POST payloads.
-//     The route itself is public (no auth.protect()), but it still needs the
-//     proxy to run so Clerk can attach context for any future logging.
 //   • /__clerk/(.*)      — Clerk's own internal routes.
 // ---------------------------------------------------------------------------
 
