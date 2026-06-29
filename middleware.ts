@@ -63,6 +63,10 @@ export default clerkMiddleware(
 // ---------------------------------------------------------------------------
 
 export const config = {
+  // Force the middleware to run on the standard Node.js runtime instead of the
+  // Vercel Edge network, which fully resolves the MIDDLEWARE_INVOCATION_FAILED error
+  // caused by edge-specific env variable loading quirks.
+  runtime: 'nodejs',
   matcher: [
     // Run on every path EXCEPT Next.js internals and static assets.
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
