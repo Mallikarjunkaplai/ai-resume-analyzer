@@ -1,11 +1,7 @@
 /**
- * proxy.ts — Root-level Proxy (Next.js 16+)
+ * middleware.ts — Root-level Middleware
  *
- * In Next.js 16 the `middleware.ts` file convention was deprecated and
- * renamed to `proxy.ts`. This file MUST live at the project root (same
- * level as `app/` and `package.json`).
- *
- * What this proxy does:
+ * What this middleware does:
  *   1. Uses Clerk's `clerkMiddleware` to attach auth context to every request.
  *   2. Explicitly passes `publishableKey` and `secretKey` to guarantee Clerk
  *      can authenticate even when env vars are read before Next.js injects them.
