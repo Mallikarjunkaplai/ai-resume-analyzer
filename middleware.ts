@@ -30,24 +30,16 @@ const isProtectedRoute = createRouteMatcher([
 // Proxy function
 // ---------------------------------------------------------------------------
 
-export default clerkMiddleware(
-  async (auth, request) => {
-    // If the incoming request matches a protected route, enforce authentication.
-    // Clerk will automatically redirect unauthenticated users to the sign-in page.
-    if (isProtectedRoute(request)) {
-      await auth.protect();
-    }
+export default clerkMiddleware(async (auth, request) => {
+  // If the incoming request matches a protected route, enforce authentication.
+  // Clerk will automatically redirect unauthenticated users to the sign-in page.
+  if (isProtectedRoute(request)) {
+    await auth.protect();
+  }
 
-    // All other routes (including "/" and "/api/webhooks/(.*)") fall through
-    // without any authentication check, keeping them fully public.
-  },
-  (req) => ({
-    // Explicitly passing the keys via a callback prevents Clerk from failing silently or throwing
-    // MIDDLEWARE_INVOCATION_FAILED when env vars aren't populated at module evaluation time on Vercel Edge.
-    publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-    secretKey: process.env.CLERK_SECRET_KEY,
-  })
-);
+  // All other routes (including "/" and "/api/webhooks/(.*)") fall through
+  // without any authentication check, keeping them fully public.
+});
 
 // ---------------------------------------------------------------------------
 // Matcher — controls which paths the proxy function runs on at all.
@@ -63,10 +55,6 @@ export default clerkMiddleware(
 // ---------------------------------------------------------------------------
 
 export const config = {
-  // Force the middleware to run on the standard Node.js runtime instead of the
-  // Vercel Edge network, which fully resolves the MIDDLEWARE_INVOCATION_FAILED error
-  // caused by edge-specific env variable loading quirks.
-  runtime: 'nodejs',
   matcher: [
     // Run on every path EXCEPT Next.js internals and static assets.
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
