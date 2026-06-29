@@ -41,12 +41,12 @@ export default clerkMiddleware(
     // All other routes (including "/" and "/api/webhooks/(.*)") fall through
     // without any authentication check, keeping them fully public.
   },
-  {
-    // Explicitly passing the keys prevents Clerk from failing silently when
-    // the env vars aren't automatically picked up at proxy evaluation time.
+  (req) => ({
+    // Explicitly passing the keys via a callback prevents Clerk from failing silently or throwing
+    // MIDDLEWARE_INVOCATION_FAILED when env vars aren't populated at module evaluation time on Vercel Edge.
     publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     secretKey: process.env.CLERK_SECRET_KEY,
-  }
+  })
 );
 
 // ---------------------------------------------------------------------------
