@@ -37,14 +37,12 @@ declare global {
 }
 
 function createPrismaClient() {
-  const connectionString = process.env.DATABASE_URL;
-
-  if (!connectionString) {
-    throw new Error(
-      "[db] DATABASE_URL is not set. " +
-        "Add it to .env.local: DATABASE_URL=postgresql://..."
-    );
-  }
+  // Use a dummy connection string during Vercel's build/static-generation phase
+  // when DATABASE_URL is not yet available. The dummy string prevents PrismaNeon
+  // from throwing at import time — actual DB connections only happen at request time.
+  const connectionString =
+    process.env.DATABASE_URL ||
+    "postgresql://dummy:dummy@dummy.neon.tech/dummy?sslmode=require";
 
   // Prisma 7: pass a driver adapter — NOT datasourceUrl or datasources.
   // PrismaNeon uses Neon's WebSocket pool, which works in serverless runtimes.
